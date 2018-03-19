@@ -1,2 +1,50 @@
 ---
-# tasks file for ansible-role-linux-active-directory
+- name: Update packages repository
+  apt:  update_cache=yes
+- name: Install packages
+  apt: name={{item}} state=present
+  with_items:
+    - krb5-user
+    - samba
+    - sssd
+    - ntp
+
+- name: Setting krb5 config - /etc/krb5.conf
+  template: src=krb5.conf.j2 dest=/etc/krb5.conf owner=root mode=0644
+
+- name: Setting ntp config - /etc/ntp.conf
+  template: src=ntp.conf.j2 dest=/etc/ntp.conf owner=root mode=0644
+
+- name: Setting samba config - /etc/samba/smb.conf
+  template: src=smb.conf.j2 dest=/etc/samba/smb.conf owner=root mode=0644
+
+- name: Setting sssd config - /etc/sssd/sssd.conf
+  template: src=sssd.conf.j2 dest=/etc/sssd/sssd.conf owner=root mode=0600
+
+- name: Restart services
+  service: name={{item}} state=restarted enabled=yes
+  with_items:
+    - ntp
+    - smbd
+
+- name: Join AD with Samba to generate the keytab
+  command: net ads join createcomputer={{ lad_server_organisation_unit }} -U "{{ lad_join_username }}"%"{{ lad_join_password }}"
+  args:
+    creates: /etc/krb5.keytab
+
+# This step may fail if you have propagation time after the machine joins domain.
+# Just wait for it and run ansible again.
+- name: Get kerberos ticket with the sambe keytab
+  command: kinit -kt /etc/krb5.keytab {{ ansible_hostname|upper }}$
+  args:
+    creates: /tmp/krb5cc_0
+
+- name: Start sssd
+  service: name=sssd state=restarted enabled=yes
+
+- name: Set home directories for users logging in
+  lineinfile:
+    path: /etc/pam.d/common-session
+    insertafter: '.*pam_unix'
+    line: 'session required    pam_mkhomedir.so skel=/etc/skel/ umask=0022'
+  when: lad_set_home_directory

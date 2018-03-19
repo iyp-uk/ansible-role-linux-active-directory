@@ -1,0 +1,13 @@
+# {{ansible_managed}}
+
+[libdefaults]
+default_realm = {{ lad_domain_name|upper }}
+dns_lookup_realm = false
+dns_lookup_kdc = true
+forwardable = yes
+ticket_lifetime = {{ lad_krb_ticket_lifetime }}
+renew_lifetime = {{ lad_krb_renew_lifetime }}
+
+[domain_realm]
+.{{ lad_domain_name|lower }} = {{ lad_domain_name|upper }}
+{{ lad_domain_name|lower }} = {{ lad_domain_name|upper }}

@@ -1,2 +1,22 @@
 ---
-# defaults file for ansible-role-linux-active-directory
+lad_domain_name: "domain.example.com"
+
+# This is the FQDN of your LDAP server, providing NTP service.
+lad_ldap_server: "fqdn-ldap-server.domain.example.com"
+
+# Server Organisation Unit: Where the machine will be declared in your domain controller organisation units.
+lad_server_organisation_unit: "Computers"
+
+# Credentials for the user who joins the domain. Must exist in your domain controller with enough privileges.
+lad_join_username: "Administrator"
+lad_join_password: "Password"  # You want to have this one in your ansible vault!
+
+# Kerberos settings
+lad_krb_ticket_lifetime: "24h"
+lad_krb_renew_lifetime: "7d"
+
+# Samba settings
+lad_smb_workgroup: "WORKGROUP"
+
+# When users log in - do you want them to have a home directory?
+lad_set_home_directory: True
